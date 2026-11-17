@@ -158,7 +158,7 @@ export function Guestbook({ title, previewCount, capsuleOpensAt }: { title: stri
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={writeOpen} onOpenChange={setWriteOpen}>
+      <Drawer repositionInputs={false} open={writeOpen} onOpenChange={setWriteOpen}>
         <DrawerContent className={drawerClass}>
           <DrawerHeader>
             <DrawerTitle className="font-myeongjo text-[17px] font-normal text-ink">방명록 작성</DrawerTitle>
@@ -222,7 +222,7 @@ export function Guestbook({ title, previewCount, capsuleOpensAt }: { title: stri
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+      <Drawer repositionInputs={false} open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <DrawerContent className={drawerClass}>
           <DrawerHeader>
             <DrawerTitle className="font-myeongjo text-[17px] font-normal text-ink">방명록 삭제</DrawerTitle>

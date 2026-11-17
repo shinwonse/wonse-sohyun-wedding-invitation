@@ -1,12 +1,21 @@
 "use client";
 
-import { useRef, type FocusEvent, type FormEventHandler, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  type FocusEvent,
+  type FormEventHandler,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 /**
  * Shared pieces for the bottom-sheet forms (guestbook, time capsule), tuned for phone keyboards.
  *
- * When the keyboard opens, vaul shrinks the drawer to the space above it. SheetForm then lets the
- * fields scroll while the submit button stays pinned right above the keyboard.
+ * When the keyboard opens, SheetForm docks its drawer right on top of it and shrinks it to the space
+ * left, letting the fields scroll while the submit button stays pinned right above the keyboard.
+ * Drawers holding a SheetForm set `repositionInputs={false}` so vaul doesn't move them as well.
  */
 
 export const drawerClass = "mx-auto w-full max-w-[430px] bg-paper font-myeongjo tracking-[-0.04em] text-ink";
@@ -32,17 +41,66 @@ function reveal(area: HTMLElement, field: HTMLElement) {
   else if (above > 0) area.scrollBy({ top: -above, behavior: "smooth" });
 }
 
+/** Space left above a keyboard-squeezed sheet, so it still reads as a sheet over the page. */
+const TOP_GAP = 24;
+
+/**
+ * Keeps the sheet sitting right on the keyboard.
+ *
+ * Phones keep the layout viewport (what the sheet's `bottom: 0` is measured from) at full height while
+ * the keyboard is up and only shrink the visual viewport, which they also scroll to bring the focused
+ * field into view. vaul's own `repositionInputs` lifts the sheet by the keyboard height but ignores
+ * that scroll, so the two add up and the sheet shoots off the top of the screen. Measuring from where
+ * the visual viewport actually is covers both.
+ */
+function useKeyboardDock(area: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const sheet = area.current?.closest<HTMLElement>("[data-vaul-drawer]");
+    if (!viewport || !sheet) return;
+
+    let frame = 0;
+    let lastHeight = viewport.height;
+    const dock = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const { height, offsetTop } = viewport;
+        // from the bottom of the layout viewport up to the top of the keyboard (0 when it's closed)
+        sheet.style.bottom = `${Math.max(0, window.innerHeight - height - offsetTop)}px`;
+        // 80vh is the drawer's own cap
+        sheet.style.maxHeight = `min(80vh, ${height - TOP_GAP}px)`;
+        // the keyboard opened, closed or changed height: keep the field being typed in visible
+        if (height !== lastHeight) {
+          lastHeight = height;
+          const field = document.activeElement;
+          if (area.current && field instanceof HTMLElement && area.current.contains(field)) reveal(area.current, field);
+        }
+      });
+    };
+
+    dock();
+    viewport.addEventListener("resize", dock);
+    viewport.addEventListener("scroll", dock);
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport.removeEventListener("resize", dock);
+      viewport.removeEventListener("scroll", dock);
+      sheet.style.removeProperty("bottom");
+      sheet.style.removeProperty("max-height");
+    };
+  }, [area]);
+}
+
 export function SheetForm({ onSubmit, submit, children }: { onSubmit: FormEventHandler<HTMLFormElement>; submit: ReactNode; children: ReactNode }) {
   const area = useRef<HTMLDivElement>(null);
+  useKeyboardDock(area);
 
-  // The keyboard opens (and vaul shrinks the sheet) only after focus, so check again once the
-  // visual viewport has resized.
+  // Moving to another field with the keyboard already up doesn't resize the viewport, so check
+  // once the browser has finished bringing the new field into view.
   const onFocus = (e: FocusEvent<HTMLDivElement>) => {
     const field = e.target;
     if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
-    const run = () => area.current && document.activeElement === field && reveal(area.current, field);
-    window.visualViewport?.addEventListener("resize", () => setTimeout(run, 60), { once: true });
-    setTimeout(run, 350);
+    setTimeout(() => area.current && document.activeElement === field && reveal(area.current, field), 350);
   };
 
   return (

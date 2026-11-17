@@ -105,7 +105,7 @@ export function TimeCapsule({ opensAt }: { opensAt: string }) {
         </TemplateButton>
       )}
 
-      <Drawer open={writeOpen} onOpenChange={setWriteOpen}>
+      <Drawer repositionInputs={false} open={writeOpen} onOpenChange={setWriteOpen}>
         <DrawerContent className={drawerClass}>
           <DrawerHeader>
             <DrawerTitle className="font-myeongjo text-[17px] font-normal text-ink">1주년 타임캡슐</DrawerTitle>
@@ -153,7 +153,7 @@ export function TimeCapsule({ opensAt }: { opensAt: string }) {
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={openOpen} onOpenChange={setOpenOpen}>
+      <Drawer repositionInputs={false} open={openOpen} onOpenChange={setOpenOpen}>
         <DrawerContent className={drawerClass}>
           <DrawerHeader>
             <DrawerTitle className="font-myeongjo text-[17px] font-normal text-ink">타임캡슐</DrawerTitle>
