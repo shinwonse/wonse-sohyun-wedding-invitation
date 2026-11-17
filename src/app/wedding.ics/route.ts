@@ -22,6 +22,13 @@ function fold(line: string) {
   return out.join("\r\n ");
 }
 
+/**
+ * DTSTAMP: when this iCalendar object was created (RFC 5545 §3.8.7.2), not the event time.
+ * Fixed rather than `new Date()` so the route stays prerendered under cacheComponents.
+ * Increment SEQUENCE (and bump DTSTAMP) whenever the event details change.
+ */
+const DTSTAMP = icsTime(new Date("2026-11-16T20:15:43+09:00")); // d8bda27
+
 /** "Add to calendar" file for the ceremony (with a reminder the day before). Static, built once. */
 export function GET() {
   const e = weddingEvent();
@@ -32,8 +39,9 @@ export function GET() {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:wedding-${icsTime(e.start)}@wonse-sohyun`,
-    `DTSTAMP:${icsTime(e.start)}`,
+    "UID:wedding-20270227T060000Z@wonse-sohyun",
+    `DTSTAMP:${DTSTAMP}`,
+    "SEQUENCE:1",
     `DTSTART:${icsTime(e.start)}`,
     `DTEND:${icsTime(e.end)}`,
     `SUMMARY:${escape(e.title)}`,
